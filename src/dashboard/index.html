@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PAYCIS Rail B — Mint Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #0a0a0f;
+      color: #e2e8f0;
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    header {
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h1 { font-size: 20px; color: #38bdf8; }
+    .live-dot {
+      width: 8px; height: 8px;
+      background: #22c55e;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 8px;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-card .value {
+      font-size: 28px;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .stat-card .label {
+      font-size: 11px;
+      color: #64748b;
+      text-transform: uppercase;
+    }
+
+    .tokenized { color: #22c55e; }
+    .confirmed { color: #38bdf8; }
+    .pending   { color: #f59e0b; }
+    .failed    { color: #ef4444; }
+    .total     { color: #a78bfa; }
+
+    .search-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    input {
+      flex: 1;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 10px 14px;
+      color: #e2e8f0;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      outline: none;
+    }
+
+    input:focus { border-color: #38bdf8; }
+
+    button {
+      background: #1e40af;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      transition: background 0.2s;
+    }
+
+    button:hover { background: #2563eb; }
+    button.secondary {
+      background: #1e293b;
+    }
+    button.secondary:hover { background: #334155; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th {
+      text-align: left;
+      padding: 10px 14px;
+      background: #0f172a;
+      color: #64748b;
+      font-size: 11px;
+      text-transform: uppercase;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #0f172a;
+    }
+
+    tr:hover td { background: #0f172a55; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: bold;
+    }
+
+    .badge-TOKENIZED    { background: #14532d; color: #22c55e; }
+    .badge-MINT_CONFIRMED { background: #0c4a6e; color: #38bdf8; }
+    .badge-MINT_REQUESTED { background: #1e3a5f; color: #60a5fa; }
+    .badge-PENDING      { background: #451a03; color: #f59e0b; }
+    .badge-FAILED       { background: #450a0a; color: #ef4444; }
+
+    .token-cell {
+      font-size: 12px;
+      color: #94a3b8;
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 48px;
+      color: #334155;
+    }
+
+    .refresh-info {
+      font-size: 11px;
+      color: #334155;
+      text-align: right;
+      margin-top: 12px;
+    }
+
+    .result-box {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1><span class="live-dot"></span>PAYCIS Rail B — Mint Dashboard</h1>
+  <span style="font-size:12px; color:#334155">Auto-refresh: 5s</span>
+</header>
+
+<!-- Stats -->
+<div class="stats">
+  <div class="stat-card">
+    <div class="value total" id="stat-total">0</div>
+    <div class="label">Total</div>
+  </div>
+  <div class="stat-card">
+    <div class="value tokenized" id="stat-tokenized">0</div>
+    <div class="label">Tokenized</div>
+  </div>
+  <div class="stat-card">
+    <div class="value confirmed" id="stat-confirmed">0</div>
+    <div class="label">Confirmed</div>
+  </div>
+  <div class="stat-card">
+    <div class="value pending" id="stat-pending">0</div>
+    <div class="label">Pending</div>
+  </div>
+  <div class="stat-card">
+    <div class="value failed" id="stat-failed">0</div>
+    <div class="label">Failed</div>
+  </div>
+</div>
+
+<!-- Token Search -->
+<div class="search-bar">
+  <input id="searchInput" type="text" placeholder="Search token: TXN-1779347762533" />
+  <button onclick="searchToken()">Search</button>
+  <button class="secondary" onclick="loadAll()">Refresh</button>
+</div>
+
+<!-- Search Result -->
+<div class="result-box" id="resultBox"></div>
+
+<!-- Transactions Table -->
+<table>
+  <thead>
+    <tr>
+      <th>Transaction Token</th>
+      <th>Status</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody id="txTable">
+    <tr><td colspan="3" class="empty">Loading transactions...</td></tr>
+  </tbody>
+</table>
+
+<div class="refresh-info" id="lastRefresh"></div>
+
+<script>
+  const API = 'http://localhost:3000';
+  const knownTokens = new Set();
+
+  async function searchToken() {
+    const token = document.getElementById('searchInput').value.trim();
+    if (!token) return;
+
+    const box = document.getElementById('resultBox');
+    box.style.display = 'block';
+    box.innerHTML = 'Searching...';
+
+    try {
+      const res = await fetch(`${API}/status/${token}`);
+      const data = await res.json();
+
+      if (res.ok) {
+        box.innerHTML = `
+          <strong style="color:#38bdf8">${data.transactionToken}</strong><br>
+          Status: <span class="badge badge-${data.status}">${data.status}</span>
+        `;
+        knownTokens.add(token);
+        renderTable([...knownTokens]);
+      } else {
+        box.innerHTML = `<span style="color:#ef4444">Token not found: ${token}</span>`;
+      }
+    } catch (e) {
+      box.innerHTML = `<span style="color:#ef4444">Server unreachable</span>`;
+    }
+  }
+
+ async function loadAll() {
+  try {
+    const res = await fetch(`${API}/transactions`);
+    const data = await res.json();
+    const tokens = data.transactions.map(t => t.transactionToken);
+    tokens.forEach(t => knownTokens.add(t));
+    renderTable([...knownTokens]);
+  } catch (e) {
+    console.error('Could not load transactions');
+  }
+  document.getElementById('lastRefresh').textContent =
+    `Last refreshed: ${new Date().toLocaleTimeString()}`;
+}
+
+  async function renderTable(tokens) {
+    const tbody = document.getElementById('txTable');
+
+    if (tokens.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="3" class="empty">
+        No transactions yet — fire a test alert to see data
+      </td></tr>`;
+      updateStats([]);
+      return;
+    }
+
+    const results = await Promise.all(
+      tokens.map(async (token) => {
+        try {
+          const res = await fetch(`${API}/status/${token}`);
+          if (res.ok) return await res.json();
+          return { transactionToken: token, status: 'UNKNOWN' };
+        } catch {
+          return { transactionToken: token, status: 'UNREACHABLE' };
+        }
+      })
+    );
+
+    tbody.innerHTML = results.map(r => `
+      <tr>
+        <td class="token-cell" title="${r.transactionToken}">${r.transactionToken}</td>
+        <td><span class="badge badge-${r.status}">${r.status}</span></td>
+        <td>
+          <button class="secondary" style="padding:4px 10px; font-size:11px"
+            onclick="navigator.clipboard.writeText('${r.transactionToken}')">
+            Copy
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    updateStats(results);
+  }
+
+  function updateStats(results) {
+    document.getElementById('stat-total').textContent = results.length;
+    document.getElementById('stat-tokenized').textContent =
+      results.filter(r => r.status === 'TOKENIZED').length;
+    document.getElementById('stat-confirmed').textContent =
+      results.filter(r => r.status === 'MINT_CONFIRMED').length;
+    document.getElementById('stat-pending').textContent =
+      results.filter(r => r.status === 'PENDING' || r.status === 'MINT_REQUESTED').length;
+    document.getElementById('stat-failed').textContent =
+      results.filter(r => r.status === 'FAILED').length;
+  }
+
+  // Allow Enter key in search
+  document.getElementById('searchInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') searchToken();
+  });
+
+  // Auto-refresh every 5 seconds
+  setInterval(loadAll, 5000);
+  loadAll();
+</script>
+</body>
+</html>
