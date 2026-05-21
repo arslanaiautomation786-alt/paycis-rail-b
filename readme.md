@@ -65,7 +65,7 @@ npm install
 
 ### Configure `.env`
 ```env
-REDIS_HOST=172.21.236.219
+REDIS_HOST=127.0.0.1
 REDIS_PORT=6379
 WEBHOOK_SECRET=paycis-secret-key
 CIRCLE_API_KEY=your_circle_key_here
